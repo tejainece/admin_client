@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:html';
 import 'package:admin_client/admin_client.dart';
 
-typedef Element AdminPartBuilder(BuildInfo info);
+typedef Element AdminPartBuilder(BuildContext info);
 
-class BuildInfo {
+class BuildContext implements Context {
   final navigator = StreamController<Route>();
 
   final Router router;
@@ -15,7 +15,7 @@ class BuildInfo {
 
   Stream<Route> get onRoute => navigator.stream;
 
-  BuildInfo({this.router, this.renderers, this.admin});
+  BuildContext({this.router, this.renderers, this.admin});
 }
 
 Element build(Admin admin,
@@ -31,7 +31,7 @@ Element build(Admin admin,
   admin.makeRoutes(rou);
   if (router != null) rou.merge(router);
 
-  BuildInfo info = BuildInfo(router: rou, renderers: rens, admin: admin);
+  BuildContext info = BuildContext(router: rou, renderers: rens, admin: admin);
 
   Element h = (header ?? buildHeader)(info);
   Element m = (main ?? buildMain)(info);
@@ -44,17 +44,17 @@ Element build(Admin admin,
   return ret;
 }
 
-Element buildHeader(BuildInfo info) => new DivElement()
+Element buildHeader(BuildContext info) => new DivElement()
   ..classes.add('admin-header')
   ..append(new SpanElement()
     ..classes.add('admin-title')
     ..text = info.admin.title);
 
-Element buildMain(BuildInfo info) {
+Element buildMain(BuildContext info) {
   return new DivElement()..append(buildMenu(info))..append(buildContent(info));
 }
 
-Element buildMenu(BuildInfo info) {
+Element buildMenu(BuildContext info) {
   var ret = DivElement();
   for (Resource r in info.admin.resources) {
     ret.append(new DivElement()
@@ -67,7 +67,7 @@ Element buildMenu(BuildInfo info) {
   return ret;
 }
 
-Element buildContent(BuildInfo info) {
+Element buildContent(BuildContext info) {
   final ret = new DivElement();
 
   final builder = (Route route) async {
@@ -77,7 +77,7 @@ Element buildContent(BuildInfo info) {
       return;
     }
 
-    dynamic content = maker(route, info.admin);
+    dynamic content = maker(route, info);
 
     if (content is Future) content = await content;
 
@@ -103,7 +103,7 @@ Element buildContent(BuildInfo info) {
   return ret;
 }
 
-Element buildFooter(BuildInfo info) => new DivElement();
+Element buildFooter(BuildContext info) => new DivElement();
 
 final Renderers defaultRenderers = new Renderers()
   ..register<TextField>(textFieldRenderer)

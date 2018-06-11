@@ -10,7 +10,7 @@ class Player {
 
 class ReadPlayer implements ReadView<Player> {
   @override
-  View renderRead(String resName, Fetcher f, Player model) {
+  View renderRead(Player model, Resource<Player> r, Context ctx) {
     return Box(
         children: [TextField(model.name, 'Name'), TextField(model.age, 'Age')]);
   }
@@ -18,7 +18,7 @@ class ReadPlayer implements ReadView<Player> {
 
 class ReadListPlayer implements ReadListView<Player> {
   @override
-  View renderReadList(String resName, Fetcher f, List<Player> model) {
+  View renderReadList(List<Player> model, Resource<Player> r, Context ctx) {
     return Box(
         children: model
             .map((model) => Box(children: [
@@ -28,7 +28,7 @@ class ReadListPlayer implements ReadListView<Player> {
                       text: 'Edit',
                       callback: () {
                         print('Edit');
-                        // TODO
+                        ctx.navigator.add(Route(r.readUrl));
                       }),
                 ]))
             .toList());
@@ -45,7 +45,7 @@ void main() {
   querySelector('#admin-root').append(b);
 }
 
-class DummyPlayerFetcher implements Fetcher {
+class DummyPlayerFetcher implements GenericFetcher {
   @override
   M create<M>(String resName, M model) {}
 
@@ -57,8 +57,8 @@ class DummyPlayerFetcher implements Fetcher {
 
   @override
   List<M> readList<M>(String resName) =>
-      <Player>[new Player(name: 'Messi', age: 31)] as List<M>;
+      <Player>[Player(name: 'Messi', age: 31)] as List<M>;
 
   @override
-  M read<M>(String resName, String id) {}
+  M read<M>(String resName, String id) => Player(name: 'Messi', age: 31) as M;
 }

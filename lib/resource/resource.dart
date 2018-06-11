@@ -3,19 +3,19 @@ import 'package:admin_client/controls/controls.dart';
 import 'package:admin_client/fetcher/fetcher.dart';
 
 abstract class CreateView<R> {
-  FutureOr<View> renderCreate(String resName, Fetcher f);
+  FutureOr<View> renderCreate(Resource<R> res, Context ctx);
 }
 
 abstract class UpdateView<R> {
-  FutureOr<View> renderUpdate(String resName, Fetcher f, R model);
+  FutureOr<View> renderUpdate(R model, Resource<R> res, Context ctx);
 }
 
 abstract class ReadView<R> {
-  FutureOr<View> renderRead(String resName, Fetcher f, R model);
+  FutureOr<View> renderRead(R model, Resource<R> res, Context ctx);
 }
 
 abstract class ReadListView<R> {
-  FutureOr<View> renderReadList(String resName, Fetcher f, List<R> model);
+  FutureOr<View> renderReadList(List<R> model, Resource<R> res, Context ctx);
 }
 
 class Route {
@@ -48,7 +48,7 @@ class Resource<R> {
   final ReadListView<R> readList;
   final String name;
   final String label;
-  final Fetcher fetcher;
+  GenericFetcher fetcher;
   final String icon;
 
   Resource(
@@ -66,32 +66,36 @@ class Resource<R> {
 
   void makeRoutes(Router router) {
     if (create != null) {
-      router['@$name/create'] = (Route route, Admin admin) async {
-        Fetcher f = fetcher ?? admin.fetcher;
-        return create.renderCreate(name, f);
+      router[createUrl] = (Route route, Context ctx) async {
+        return create.renderCreate(this, ctx);
       };
     }
     if (update != null) {
-      router['@$name/edit/:id'] = (Route route, Admin admin) async {
-        Fetcher f = fetcher ?? admin.fetcher;
+      router[updateUrl] = (Route route, Context ctx) async {
         return update.renderUpdate(
-            name, f, await f.read(name, route[2]));
+            await fetcher.read(name, route[2]), this, ctx);
       };
     }
     if (read != null) {
-      router['@$name/:id'] = (Route route, Admin admin) async {
-        Fetcher f = fetcher ?? admin.fetcher;
-        return read.renderRead(name, f, await f.read(name, route[1]));
+      router[readUrl] = (Route route, Context ctx) async {
+        return read.renderRead(await fetcher.read(name, route[1]), this, ctx);
       };
     }
     if (readList != null) {
-      router['@$name'] = (Route route, Admin admin) async {
+      router[readListUrl] = (Route route, Context ctx) async {
         // TODO implement pagination
-        Fetcher f = fetcher ?? admin.fetcher;
-        return readList.renderReadList(name, f, await f.readList(name));
+        return readList.renderReadList(await fetcher.readList(name), this, ctx);
       };
     }
   }
+
+  String get createUrl => '@$name/create';
+
+  String get updateUrl => '@$name/edit/:id';
+
+  String get readUrl => '@$name/:id';
+
+  String get readListUrl => '@$name';
 }
 
 class Admin {
@@ -103,12 +107,14 @@ class Admin {
 
   // TODO auth
 
-  final Fetcher fetcher;
+  final GenericFetcher fetcher;
 
   Admin(this.resources,
       {this.title: 'Jaguar admin',
       this.fetcher,
-      this.logo: '/admin/static/images/logo.png'});
+      this.logo: '/admin/static/images/logo.png'}) {
+    for (Resource r in resources) r.fetcher ??= fetcher;
+  }
 
   void makeRoutes(Router router) {
     for (Resource r in resources) r.makeRoutes(router);
@@ -116,7 +122,7 @@ class Admin {
 }
 
 typedef FutureOr<dynamic /* Element | View */ > ContentMaker(
-    Route route, Admin admin);
+    Route route, Context ctx);
 
 class Router {
   final Map<String, ContentMaker> _static = {};
@@ -175,4 +181,12 @@ class Router {
     _static.addAll(other._static);
     _dynamic.addAll(other._dynamic);
   }
+}
+
+abstract class Context {
+  StreamController<Route> get navigator;
+
+  Router get router;
+
+  Admin get admin;
 }
