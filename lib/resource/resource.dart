@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:admin_client/controls/controls.dart';
 import 'package:admin_client/fetcher/fetcher.dart';
 
+export 'list_page_maker.dart';
+
 abstract class CreateView<R> {
   FutureOr<View> renderCreate(Resource<R> res, Context ctx);
 }

@@ -11,19 +11,31 @@ class Player {
 class ReadPlayer implements ReadView<Player> {
   @override
   View renderRead(Player model, Resource<Player> r, Context ctx) {
-    return Box(
-        children: [TextField(model.name, 'Name'), TextField(model.age, 'Age')]);
+    return Box(children: [TextField(model.name), IntField(model.age)]);
   }
 }
 
 class ReadListPlayer implements ReadListView<Player> {
+  forEach(Player model, Resource<Player> r, Context ctx) {
+    return TableRow({
+      'name': TextField(model.name),
+      'age': IntField(model.age),
+    });
+  }
+
   @override
-  View renderReadList(List<Player> model, Resource<Player> r, Context ctx) {
+  Future<View> renderReadList(
+      List<Player> model, Resource<Player> r, Context ctx) {
+    return simpleListPage({
+      'name': (Player p) => TextField(p.name),
+      'age': (Player p) => IntField(p.age),
+    }).makeView(model);
+    /*
     return Box(
         children: model
             .map((model) => Box(children: [
-                  TextField(model.name, 'Name'),
-                  TextField(model.age, 'Age'),
+                  TextField(model.name),
+                  IntField(model.age),
                   Button(
                       text: 'Edit',
                       callback: () {
@@ -32,7 +44,28 @@ class ReadListPlayer implements ReadListView<Player> {
                       }),
                 ]))
             .toList());
+            */
   }
+}
+
+typedef View SimpleListPageCell<T>(T model);
+
+ListPageMaker simpleListPage<T>(Map<String, SimpleListPageCell<T>> columns) {
+  final colSpec =
+      new List<ColumnSpec>.filled(columns.length, null, growable: true);
+  for (int i = 0; i < columns.keys.length; i++) {
+    String key = columns.keys.elementAt(i);
+    colSpec[i] = new ColumnSpec(key);
+  }
+  return ListPageMaker<T>(
+      colSpec: colSpec,
+      rowMaker: (T model) {
+        final cells = <String, View>{};
+        for (String key in columns.keys) {
+          cells[key] = columns[key](model);
+        }
+        return new TableRow(cells);
+      });
 }
 
 void main() {
