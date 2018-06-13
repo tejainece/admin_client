@@ -9,8 +9,10 @@ void main() {
       ColumnSpec<int>('Age', width: FlexSize(30))
     ],
     rows: [
+      /*
       {"Name": TextField('Messi'), "Age": IntField(30)},
       {"Name": TextField('Coutinho'), "Age": IntField(30)},
+      */
     ],
   );
 

@@ -24,9 +24,11 @@ class ListPageMaker<T> {
   }
 
   Future<View> makeTable(List<T> model) async {
-    return Box(children: [
-      Table(spec: colSpec, rows: [])
-    ]);
+    final rows = new List<TableRow>.filled(model.length, null, growable: true);
+    for (int i = 0; i < model.length; i++) {
+      rows[i] = await rowMaker(model[i]);
+    }
+    return Box(children: [Table(spec: colSpec, rows: rows)]);
   }
 
   View makePaginator() {

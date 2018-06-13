@@ -16,13 +16,6 @@ class ReadPlayer implements ReadView<Player> {
 }
 
 class ReadListPlayer implements ReadListView<Player> {
-  forEach(Player model, Resource<Player> r, Context ctx) {
-    return TableRow({
-      'name': TextField(model.name),
-      'age': IntField(model.age),
-    });
-  }
-
   @override
   Future<View> renderReadList(
       List<Player> model, Resource<Player> r, Context ctx) {

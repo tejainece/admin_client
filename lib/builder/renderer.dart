@@ -77,11 +77,12 @@ Element tableRenderer(final field, Renderers renderers) {
         new Element.th()..classes.add('jaguar-admin-table-head-item-enddummy'));
     var body = new Element.tag('tbody')..classes.add('jaguar-admin-table-body');
     for (int r = 0; r < field.numRows; r++) {
-      Map<String, View> row = field.rows[r];
+      TableRow row = field.rows[r];
+      // TODO set height
       var el = new TableRowElement()..classes.add('jaguar-admin-table-row');
       for (int c = 0; c < field.numCols; c++) {
         ColumnSpec spec = field.spec[c];
-        View v = row[spec.name];
+        View v = row.cells[spec.name];
         if (v != null) {
           ViewRenderer ren = renderers.getFor(v);
           el.append(new TableCellElement()..append(ren(v, renderers)));
