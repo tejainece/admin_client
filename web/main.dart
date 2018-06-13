@@ -8,36 +8,22 @@ class Player {
   Player({this.name, this.age});
 }
 
-class ReadPlayer implements ReadView<Player> {
-  @override
-  View renderRead(Player model, Resource<Player> r, Context ctx) {
-    return Box(children: [TextField(model.name), IntField(model.age)]);
-  }
-}
-
-class ReadListPlayer implements ReadListView<Player> {
+class PlayerRes implements ReadListView<Player>, ReadView<Player> {
   @override
   Future<View> renderReadList(
       List<Player> model, Resource<Player> r, Context ctx) {
     return simpleListPage({
-      'name': (Player p) => TextField(p.name),
-      'age': (Player p) => IntField(p.age),
-    }).makeView(model);
-    /*
-    return Box(
-        children: model
-            .map((model) => Box(children: [
-                  TextField(model.name),
-                  IntField(model.age),
-                  Button(
-                      text: 'Edit',
-                      callback: () {
-                        print('Edit');
-                        ctx.navigator.add(Route(r.readUrl));
-                      }),
-                ]))
-            .toList());
-            */
+      'Name': (Player p) => TextField(p.name),
+      'Age': (Player p) => IntField(p.age),
+    }).makeView(model, r, ctx);
+  }
+
+  @override
+  View renderRead(Player model, Resource<Player> r, Context ctx) {
+    return Box(children: [
+      LabeledTextField(model.name, 'Name'),
+      LabeledIntField(model.age, 'Age')
+    ]);
   }
 }
 
@@ -62,9 +48,9 @@ ListPageMaker simpleListPage<T>(Map<String, SimpleListPageCell<T>> columns) {
 }
 
 void main() {
+  var playerRes = PlayerRes();
   var admin = Admin([
-    new Resource<Player>(
-        read: new ReadPlayer(), readList: new ReadListPlayer()),
+    new Resource<Player>(read: playerRes, readList: playerRes),
   ], fetcher: new DummyPlayerFetcher());
 
   Element b = build(admin);

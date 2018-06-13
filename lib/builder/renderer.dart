@@ -3,14 +3,55 @@ import 'package:admin_client/controls/controls.dart';
 import 'package:admin_client/builder/renderer.dart';
 
 final Renderers defaultRenderers = new Renderers()
-  ..register<TextField>(textFieldRenderer)
   ..register<Box>(boxRenderer)
+  ..register<HBox>(hBoxRenderer)
+  ..register<TextField>(textFieldRenderer)
+  ..register<LabeledTextField>(labeledTextFieldRenderer)
+  ..register<VLabeledTextField>(vLabeledTextFieldRenderer)
   ..register<Button>(buttonRenderer)
   ..register<IntField>(intFieldRenderer)
-  ..register<Table>(tableRenderer);
+  ..register<Table>(tableRenderer)
+  ..register<LabeledIntField>(labeledIntFieldRenderer)
+  ..register<VLabeledIntField>(vLabeledIntFieldRenderer);
 
 Element textFieldRenderer(final field, _) {
   if (field is TextField) {
+    var ret = new DivElement()
+      ..classes.add('jaguar-admin-text')
+      ..text = field.text;
+    if (field.bold) ret.style.fontWeight = 'bold';
+    return ret;
+  }
+  throw new Exception();
+}
+
+Element intFieldRenderer(final field, _) {
+  if (field is IntField) {
+    return new DivElement()
+      ..classes.add('jaguar-admin-int')
+      ..text = field.text.toString();
+  }
+  throw new Exception();
+}
+
+Element labeledTextFieldRenderer(final field, Renderers renderers) {
+  if (field is LabeledTextField) {
+    ViewRenderer<HBox> hBoxRend = renderers.get<HBox>();
+    var ret = new DivElement()
+      ..classes.add('jaguar-admin-labeled-text')
+      ..append(hBoxRend(
+          HBox(children: [
+            TextField(field.label, bold: true),
+            TextField(field.text)
+          ]),
+          renderers));
+    return ret;
+  }
+  throw new Exception();
+}
+
+Element vLabeledTextFieldRenderer(final field, Renderers renderers) {
+  if (field is VLabeledTextField) {
     return new DivElement()
       ..classes.add('jaguar-admin-text')
       ..text = field.text;
@@ -18,8 +59,24 @@ Element textFieldRenderer(final field, _) {
   throw new Exception();
 }
 
-Element intFieldRenderer(final field, _) {
-  if (field is IntField) {
+Element labeledIntFieldRenderer(final field, Renderers renderers) {
+  if (field is LabeledIntField) {
+    ViewRenderer<HBox> hBoxRend = renderers.get<HBox>();
+    var ret = new DivElement()
+      ..classes.add('jaguar-admin-labeled-text')
+      ..append(hBoxRend(
+          HBox(children: [
+            TextField(field.label, bold: true),
+            IntField(field.text)
+          ]),
+          renderers));
+    return ret;
+  }
+  throw new Exception();
+}
+
+Element vLabeledIntFieldRenderer(final field, Renderers renderers) {
+  if (field is VLabeledIntField) {
     return new DivElement()
       ..classes.add('jaguar-admin-int')
       ..text = field.text.toString();
@@ -41,11 +98,28 @@ Element boxRenderer(final field, Renderers renderers) {
   throw new Exception();
 }
 
+Element hBoxRenderer(final field, Renderers renderers) {
+  if (field is HBox) {
+    var ret = new DivElement()..classes.add('jaguar-admin-hbox');
+    for (View child in field.children) {
+      ViewRenderer rend = renderers.getFor(child);
+      if (rend == null)
+        throw new Exception("Renderer for ${child.runtimeType} not found!");
+      ret.append(rend(child, renderers));
+    }
+    return ret;
+  }
+  throw new Exception();
+}
+
 Element buttonRenderer(final field, Renderers renderers) {
   if (field is Button) {
-    var ret = new DivElement()..classes.add('jaguar-admin-button');
-    if (field.icon != null) ret.append(new DivElement()); // TODO set icon
-    if (field.text != null) ret.append(new Text(field.text));
+    var ret = new SpanElement()
+      ..classes.add('jaguar-admin-button')
+      ..style.color = field.color;
+    if (field.icon != null) ret.append(new SpanElement()); // TODO set icon
+    if (field.text != null) ret.append(new SpanElement()..text = field.text);
+    if (field.fontSize != null) ret.style.fontSize = '${field.fontSize}px';
     if (field.tip != null) ret.title = field.tip;
     if (field.callback != null) ret.onClick.listen((_) => field.callback());
     return ret;
@@ -73,8 +147,6 @@ Element tableRenderer(final field, Renderers renderers) {
       }
       header.append(th);
     }
-    header.append(
-        new Element.th()..classes.add('jaguar-admin-table-head-item-enddummy'));
     var body = new Element.tag('tbody')..classes.add('jaguar-admin-table-body');
     for (int r = 0; r < field.numRows; r++) {
       TableRow row = field.rows[r];
@@ -93,15 +165,16 @@ Element tableRenderer(final field, Renderers renderers) {
       }
       body.append(el);
     }
-    return new TableElement()
-      ..classes.add('jaguar-admin-table')
-      ..append(header)
-      ..append(body)
-      ..attributes.addAll({
-        "cellspacing": "0",
-        "cellpadding": "0",
-      })
-      ..style.width = '100%';
+    return new DivElement()
+      ..classes.add('jaguar-admin-table-frame')
+      ..append(new TableElement()
+        ..classes.add('jaguar-admin-table')
+        ..append(header)
+        ..append(body)
+        ..attributes.addAll({
+          "cellspacing": "0",
+          "cellpadding": "0",
+        }));
   }
   throw new Exception();
 }

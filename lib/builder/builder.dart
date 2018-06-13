@@ -19,11 +19,7 @@ class BuildContext implements Context {
 }
 
 Element build(Admin admin,
-    {AdminPartBuilder header,
-    AdminPartBuilder main,
-    AdminPartBuilder footer,
-    Renderers renderers,
-    Router router}) {
+    {AdminPartBuilder menu, Renderers renderers, Router router}) {
   Renderers rens = defaultRenderers.clone();
   if (renderers != null) rens.merge(renderers);
 
@@ -33,42 +29,47 @@ Element build(Admin admin,
 
   BuildContext info = BuildContext(router: rou, renderers: rens, admin: admin);
 
-  Element h = (header ?? buildHeader)(info);
-  Element m = (main ?? buildMain)(info);
-  Element f = (footer ?? buildFooter)(info);
+  Element h = buildSidebar(info, menu: menu);
+  Element m = buildContent(info);
 
-  var ret = new DivElement();
-  if (h != null) ret.append(h);
-  if (m != null) ret.append(m);
-  if (f != null) ret.append(f);
-  return ret;
+  return new DivElement()
+    ..classes.add('admin')
+    ..append(h)
+    ..append(m);
 }
 
-Element buildHeader(BuildContext info) => new DivElement()
-  ..classes.add('admin-header')
-  ..append(new SpanElement()
-    ..classes.add('admin-title')
-    ..text = info.admin.title);
-
-Element buildMain(BuildContext info) {
-  return new DivElement()..append(buildMenu(info))..append(buildContent(info));
-}
+Element buildSidebar(BuildContext info, {AdminPartBuilder menu}) =>
+    new DivElement()
+      ..classes.add('admin-sidebar')
+      ..append(new DivElement()
+        ..classes.add('admin-header')
+        ..append(new DivElement()
+          ..classes.add('admin-title')
+          ..text = info.admin.title)
+        ..append(new DivElement()
+          ..classes.add('admin-header-actions')
+          ..append(new DivElement()..text = "Logout")))
+      ..append(new DivElement()
+        ..classes.add('admin-menu')
+        ..append((menu ?? buildMenu)(info)));
 
 Element buildMenu(BuildContext info) {
-  var ret = DivElement();
+  var ret = DivElement()..classes.add('admin-menu-holder');
   for (Resource r in info.admin.resources) {
     ret.append(new DivElement()
-      ..append(new SpanElement()..text = r.label)
-      ..onClick.listen((_) {
-        print(r.name);
-        info.navigator.add(Route('@${r.name}'));
-      }));
+      ..classes.add('admin-menu-item')
+      ..append(new SpanElement()
+        ..classes.add('admin-menu-item-title')
+        ..text = r.label
+        ..onClick.listen((_) {
+          info.navigator.add(Route('@${r.name}'));
+        })));
   }
   return ret;
 }
 
 Element buildContent(BuildContext info) {
-  final ret = new DivElement();
+  final ret = new DivElement()..classes.add('admin-content-body');
 
   final builder = (Route route) async {
     ContentMaker maker = info.router[route.path];
@@ -100,7 +101,7 @@ Element buildContent(BuildContext info) {
 
   builder(Route(''));
 
-  return ret;
+  return new DivElement()
+    ..classes.add('admin-content')
+    ..append(ret);
 }
-
-Element buildFooter(BuildContext info) => new DivElement();
