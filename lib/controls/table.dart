@@ -5,11 +5,12 @@ import 'controls.dart';
 // 2) Resizable columns
 
 class TableRow implements View {
+  String key;
   final Size height;
   final FixedSize minHeight;
   final FixedSize maxHeight;
   Map<String, View> cells;
-  TableRow(this.cells, {this.height, this.minHeight, this.maxHeight});
+  TableRow(this.cells, {this.height, this.minHeight, this.maxHeight, this.key});
 }
 
 class ColumnSpec<T> {
@@ -38,13 +39,15 @@ class ColumnSpec<T> {
 }
 
 class Table implements View {
+  String key;
+
   List<ColumnSpec> spec;
 
   List<TableRow> rows;
 
   final bool isResponsive;
 
-  Table({this.spec, this.rows, this.isResponsive: false});
+  Table({this.spec, this.rows, this.isResponsive: false, this.key});
 
   int get numCols => spec.length;
 

@@ -12,7 +12,37 @@ final Renderers defaultRenderers = new Renderers()
   ..register<IntField>(intFieldRenderer)
   ..register<Table>(tableRenderer)
   ..register<LabeledIntField>(labeledIntFieldRenderer)
-  ..register<VLabeledIntField>(vLabeledIntFieldRenderer);
+  ..register<VLabeledIntField>(vLabeledIntFieldRenderer)
+  ..register<TextEdit>(textEditRenderer)
+  ..register<LabeledTextEdit>(labeledTextEditRenderer);
+
+Element textEditRenderer(final field, Renderers renderers) {
+  if (field is TextEdit) {
+    var ret = new TextInputElement()
+      ..classes.add('jaguar-admin-textinput')
+      ..value = field.initial;
+    if (ret.placeholder != null) ret.placeholder = field.placeholder;
+    if (field.bold) ret.style.fontWeight = 'bold';
+    field.valueGetter = () => ret.value;
+    return ret;
+  }
+  throw new Exception();
+}
+
+Element labeledTextEditRenderer(final field, Renderers renderers) {
+  if (field is LabeledTextEdit) {
+    ViewRenderer<HBox> hBoxRend = renderers.get<HBox>();
+    var ret = hBoxRend(
+        HBox(children: [
+          field.labelField,
+          field.editField,
+        ]),
+        renderers);
+    ret.classes.add('jaguar-admin-labeled-textinput');
+    return ret;
+  }
+  throw new Exception();
+}
 
 Element textFieldRenderer(final field, _) {
   if (field is TextField) {
@@ -121,7 +151,7 @@ Element buttonRenderer(final field, Renderers renderers) {
     if (field.text != null) ret.append(new SpanElement()..text = field.text);
     if (field.fontSize != null) ret.style.fontSize = '${field.fontSize}px';
     if (field.tip != null) ret.title = field.tip;
-    if (field.callback != null) ret.onClick.listen((_) => field.callback());
+    if (field.onClick != null) ret.onClick.listen((_) => field.onClick());
     return ret;
   }
   throw new Exception();

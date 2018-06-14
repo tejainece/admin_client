@@ -33,20 +33,20 @@ class ListPageMaker<T> {
         Button(
             text: '\u261b',
             fontSize: 24,
-            callback: () {
+            onClick: () {
               ctx.navigator.add(Route(r.readUrl));
             }),
         Button(
             text: '\u270D',
             fontSize: 24,
-            callback: () {
+            onClick: () {
               ctx.navigator.add(Route(r.updateUrl));
             }),
         Button(
             text: '\u00d7',
             fontSize: 24,
             color: Button.red,
-            callback: () {
+            onClick: () {
               // TODO delete
             }),
       ]);

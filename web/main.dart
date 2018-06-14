@@ -8,7 +8,8 @@ class Player {
   Player({this.name, this.age});
 }
 
-class PlayerRes implements ReadListView<Player>, ReadView<Player> {
+class PlayerRes
+    implements ReadListView<Player>, ReadView<Player>, UpdateView<Player> {
   @override
   Future<View> renderReadList(
       List<Player> model, Resource<Player> r, Context ctx) {
@@ -24,6 +25,21 @@ class PlayerRes implements ReadListView<Player>, ReadView<Player> {
       LabeledTextField(model.name, 'Name'),
       LabeledIntField(model.age, 'Age')
     ]);
+  }
+
+  @override
+  View renderUpdate(Player model, Resource<Player> res, Context ctx) {
+    var ret = Box();
+    ret.addChildren([
+      LabeledTextEdit(label: 'Name', initial: model.name, key: 'Name'),
+      HBox(children: [
+        Button(text: 'Submit', onClick: () {
+          print('Submitting ...');
+          print(ret.getByKey<LabeledTextEdit>('Name').readValue());
+        }),
+      ]),
+    ]);
+    return ret;
   }
 }
 
@@ -50,7 +66,8 @@ ListPageMaker simpleListPage<T>(Map<String, SimpleListPageCell<T>> columns) {
 void main() {
   var playerRes = PlayerRes();
   var admin = Admin([
-    new Resource<Player>(read: playerRes, readList: playerRes),
+    new Resource<Player>(
+        read: playerRes, readList: playerRes, update: playerRes),
   ], fetcher: new DummyPlayerFetcher());
 
   Element b = build(admin);
