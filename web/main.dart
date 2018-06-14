@@ -6,6 +6,8 @@ class Player {
   String name;
   int age;
   Player({this.name, this.age});
+
+  String toString() => 'Player(name: ${name}, age: ${age})';
 }
 
 class PlayerRes
@@ -33,9 +35,9 @@ class PlayerRes
     ret.addChildren([
       LabeledTextEdit(label: 'Name', initial: model.name, key: 'Name'),
       HBox(children: [
-        Button(text: 'Submit', onClick: () {
-          print('Submitting ...');
-          print(ret.getByKey<LabeledTextEdit>('Name').readValue());
+        Button(text: 'Submit', onClick: () async {
+          var nameV = ret.getByKey<LabeledTextEdit>('Name');
+          await res.fetcher.update(res.name, Player(name: nameV.readValue()));
         }),
       ]),
     ]);
@@ -82,7 +84,9 @@ class DummyPlayerFetcher implements GenericFetcher {
   dynamic remove(String resName, String id) {}
 
   @override
-  M update<M>(String resName, M model) {}
+  M update<M>(String resName, M model) {
+    print(model);
+  }
 
   @override
   List<M> readList<M>(String resName) =>

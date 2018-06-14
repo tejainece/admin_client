@@ -1,6 +1,5 @@
 import 'dart:html';
 import 'package:admin_client/controls/controls.dart';
-import 'package:admin_client/builder/renderer.dart';
 
 final Renderers defaultRenderers = new Renderers()
   ..register<Box>(boxRenderer)
@@ -23,7 +22,8 @@ Element textEditRenderer(final field, Renderers renderers) {
       ..value = field.initial;
     if (ret.placeholder != null) ret.placeholder = field.placeholder;
     if (field.bold) ret.style.fontWeight = 'bold';
-    field.valueGetter = () => ret.value;
+    field.readValue = () => ret.value;
+    field.setValue = (v) => ret.value = v ?? '';
     return ret;
   }
   throw new Exception();

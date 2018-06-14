@@ -2,9 +2,12 @@ import 'controls.dart';
 
 typedef T ValueGetter<T>();
 
+typedef void ValueSetter<T>(T value);
+
 abstract class EditView<T> implements View {
-  ValueGetter<T> get valueGetter;
-  T readValue() => valueGetter != null ? valueGetter() : null;
+  ValueGetter<T> readValue = () => null;
+
+  ValueSetter<T> setValue = (_) => null;
 }
 
 class TextEdit extends EditView<String> {
@@ -12,7 +15,6 @@ class TextEdit extends EditView<String> {
   String initial;
   String placeholder;
   bool bold;
-  ValueGetter<String> valueGetter;
   TextEdit({this.initial, this.placeholder, this.bold: false, this.key});
 }
 
@@ -35,5 +37,11 @@ class LabeledTextEdit extends EditView<String> {
             editField ?? TextEdit(initial: initial, placeholder: placeholder),
         labelField = labelField ?? TextField(label);
 
-  ValueGetter<String> get valueGetter => editField.valueGetter;
+  ValueGetter<String> get readValue => editField.readValue;
+
+  set readValue(ValueGetter<String> value) => editField.readValue = value;
+
+  ValueSetter<String> get setValue => editField.setValue;
+
+  set setValue(ValueSetter<String> value) => editField.setValue = value;
 }
