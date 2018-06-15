@@ -1,3 +1,16 @@
+/*!
+ * Font Awesome Free 5.0.13 by @fontawesome - https://fontawesome.com
+ * License - https://fontawesome.com/license (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+ */
+@font-face {
+  font-family: 'fa5-free';
+  font-style: normal;
+  font-weight: 900;
+  src: url("/static/icons/fa-solid-900.eot");
+  src: url("/static/icons/fa-solid-900.eot?#iefix") format("embedded-opentype"), url("/static/icons/fa-solid-900.woff2") format("woff2"), url("/static/icons/fa-solid-900.woff") format("woff"), url("/static/icons/fa-solid-900.ttf") format("truetype"), url("/static/icons/fa-solid-900.svg#fontawesome") format("svg");
+}
+
+
 html, body {
   width: 100%;
   height: 100%;
@@ -128,6 +141,7 @@ html, body {
     filter: none;
     transition: filter 0.2s;
     padding: 2px 5px;
+    font-family: 'fa5-free', sans-serif;
 }
 
 .jaguar-admin-button:hover {

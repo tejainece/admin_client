@@ -31,20 +31,17 @@ class ListPageMaker<T> {
       TableRow row = await rowMaker(model[i]);
       row.cells[''] = Box(children: [
         Button(
-            text: '\u261b',
-            fontSize: 24,
+            text: '\uf06e',
             onClick: () {
               ctx.navigator.add(Route(r.readUrl));
             }),
         Button(
-            text: '\u270D',
-            fontSize: 24,
+            text: '\uf303',
             onClick: () {
               ctx.navigator.add(Route(r.updateUrl));
             }),
         Button(
-            text: '\u00d7',
-            fontSize: 24,
+            text: '\uf2ed',
             color: Button.red,
             onClick: () {
               // TODO delete
