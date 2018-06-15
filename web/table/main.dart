@@ -6,7 +6,7 @@ void main() {
   var tab = Table(
     spec: [
       ColumnSpec<String>('Name', width: FixedSize(200)),
-      ColumnSpec<int>('Age', width: FlexSize(30))
+      ColumnSpec<int>('Age', width: PercentageSize(30))
     ],
     rows: [
       /*

@@ -13,14 +13,16 @@ final Renderers defaultRenderers = new Renderers()
   ..register<LabeledIntField>(labeledIntFieldRenderer)
   ..register<VLabeledIntField>(vLabeledIntFieldRenderer)
   ..register<TextEdit>(textEditRenderer)
-  ..register<LabeledTextEdit>(labeledTextEditRenderer);
+  ..register<LabeledTextEdit>(labeledTextEditRenderer)
+  ..register<IntEdit>(intEditRenderer)
+  ..register<LabeledIntEdit>(labeledIntEditRenderer);
 
 Element textEditRenderer(final field, Renderers renderers) {
   if (field is TextEdit) {
     var ret = new TextInputElement()
-      ..classes.add('jaguar-admin-textinput')
-      ..value = field.initial;
-    if (ret.placeholder != null) ret.placeholder = field.placeholder;
+      ..classes.add('textinput')
+      ..value = field.initial ?? '';
+    if (field.placeholder != null) ret.placeholder = field.placeholder;
     if (field.bold) ret.style.fontWeight = 'bold';
     field.readValue = () => ret.value;
     field.setValue = (v) => ret.value = v ?? '';
@@ -31,14 +33,37 @@ Element textEditRenderer(final field, Renderers renderers) {
 
 Element labeledTextEditRenderer(final field, Renderers renderers) {
   if (field is LabeledTextEdit) {
-    ViewRenderer<HBox> hBoxRend = renderers.get<HBox>();
-    var ret = hBoxRend(
-        HBox(children: [
-          field.labelField,
-          field.editField,
-        ]),
-        renderers);
-    ret.classes.add('jaguar-admin-labeled-textinput');
+    var ret = renderers.render(HBox(children: [
+      field.labelField,
+      field.editField,
+    ]))
+      ..classes.addAll(['labeled', 'labeled-textinput']);
+    return ret;
+  }
+  throw new Exception();
+}
+
+Element intEditRenderer(final field, Renderers renderers) {
+  if (field is IntEdit) {
+    var ret = new TextInputElement()
+      ..classes.add('textinput')
+      ..value = field.initial?.toString() ?? '';
+    if (field.placeholder != null) ret.placeholder = field.placeholder;
+    if (field.bold) ret.style.fontWeight = 'bold';
+    field.readValue = () => int.tryParse(ret.value);
+    field.setValue = (int v) => ret.value = v?.toString() ?? '';
+    return ret;
+  }
+  throw new Exception();
+}
+
+Element labeledIntEditRenderer(final field, Renderers renderers) {
+  if (field is LabeledIntEdit) {
+    var ret = renderers.render(HBox(children: [
+      field.labelField,
+      field.editField,
+    ]))
+      ..classes.addAll(['labeled', 'labeled-textinput']);
     return ret;
   }
   throw new Exception();
@@ -49,7 +74,10 @@ Element textFieldRenderer(final field, _) {
     var ret = new DivElement()
       ..classes.add('jaguar-admin-text')
       ..text = field.text;
+    ret.classes.addAll(field.classes);
     if (field.bold) ret.style.fontWeight = 'bold';
+    if (field.fontFamily != null) ret.style.fontFamily = field.fontFamily;
+    if (field.color != null) ret.style.color = field.color;
     return ret;
   }
   throw new Exception();
@@ -66,15 +94,12 @@ Element intFieldRenderer(final field, _) {
 
 Element labeledTextFieldRenderer(final field, Renderers renderers) {
   if (field is LabeledTextField) {
-    ViewRenderer<HBox> hBoxRend = renderers.get<HBox>();
     var ret = new DivElement()
       ..classes.add('jaguar-admin-labeled-text')
-      ..append(hBoxRend(
-          HBox(children: [
-            TextField(field.label, bold: true),
-            TextField(field.text)
-          ]),
-          renderers));
+      ..append(renderers.render(HBox(children: [
+        TextField(field.label, bold: true),
+        TextField(field.text)
+      ])));
     return ret;
   }
   throw new Exception();
@@ -91,15 +116,12 @@ Element vLabeledTextFieldRenderer(final field, Renderers renderers) {
 
 Element labeledIntFieldRenderer(final field, Renderers renderers) {
   if (field is LabeledIntField) {
-    ViewRenderer<HBox> hBoxRend = renderers.get<HBox>();
     var ret = new DivElement()
       ..classes.add('jaguar-admin-labeled-text')
-      ..append(hBoxRend(
-          HBox(children: [
-            TextField(field.label, bold: true),
-            IntField(field.text)
-          ]),
-          renderers));
+      ..append(renderers.render(HBox(children: [
+        TextField(field.label, bold: true),
+        IntField(field.text)
+      ])));
     return ret;
   }
   throw new Exception();
@@ -114,29 +136,119 @@ Element vLabeledIntFieldRenderer(final field, Renderers renderers) {
   throw new Exception();
 }
 
+String vAlignToCssJustifyContent(VAlign align) {
+  switch (align) {
+    case VAlign.top:
+      return 'start';
+    case VAlign.middle:
+      return 'center';
+    case VAlign.bottom:
+      return 'end';
+    default:
+      return 'inherit';
+  }
+}
+
+String hAlignToCssAlignItems(HAlign align) {
+  switch (align) {
+    case HAlign.left:
+      return 'left';
+    case HAlign.center:
+      return 'center';
+    case HAlign.right:
+      return 'right';
+    case HAlign.right:
+      return 'right';
+    default:
+      return 'inherit';
+  }
+}
+
 Element boxRenderer(final field, Renderers renderers) {
   if (field is Box) {
     var ret = new DivElement()..classes.add('jaguar-admin-box');
-    for (View child in field.children) {
-      ViewRenderer rend = renderers.getFor(child);
-      if (rend == null)
-        throw new Exception("Renderer for ${child.runtimeType} not found!");
-      ret.append(rend(child, renderers));
+    ret.classes.addAll(field.classes);
+    ret.style.boxSizing = 'border-box';
+    for (View child in field.children) ret.append(renderers.render(child));
+    if (field.width != null) ret.style.width = field.width.toString();
+    if (field.height != null) {
+      if(field.height is FlexSize) {
+        ret.style.flex = field.height.toString();
+      } else
+      ret.style.height = field.height.toString();
     }
+    if (field.vAlign != null)
+      ret.style.justifyContent = vAlignToCssJustifyContent(field.vAlign);
+    if (field.hAlign != null)
+      ret.style.alignItems = hAlignToCssAlignItems(field.hAlign);
+    if (field.pad != null) _padElement(ret, field.pad);
+    if (field.margin != null) _marginElement(ret, field.margin);
     return ret;
   }
   throw new Exception();
 }
 
+String vAlignToCssAlignItems(VAlign align) {
+  switch (align) {
+    case VAlign.top:
+      return 'start';
+    case VAlign.middle:
+      return 'center';
+    case VAlign.bottom:
+      return 'end';
+    default:
+      return 'inherit';
+  }
+}
+
+String hAlignToCssJustifyContent(HAlign align) {
+  switch (align) {
+    case HAlign.left:
+      return 'left';
+    case HAlign.center:
+      return 'center';
+    case HAlign.right:
+      return 'right';
+    case HAlign.right:
+      return 'right';
+    default:
+      return 'inherit';
+  }
+}
+
+void _padElement(Element e, EdgeInset padding) {
+  if (padding.top != null) e.style.paddingTop = padding.top.toString();
+  if (padding.right != null) e.style.paddingRight = padding.right.toString();
+  if (padding.bottom != null) e.style.paddingBottom = padding.bottom.toString();
+  if (padding.left != null) e.style.paddingLeft = padding.left.toString();
+}
+
+void _marginElement(Element e, EdgeInset margin) {
+  if (margin.top != null) e.style.marginTop = margin.top.toString();
+  if (margin.right != null) e.style.marginRight = margin.right.toString();
+  if (margin.bottom != null) e.style.marginLeft = margin.bottom.toString();
+  if (margin.left != null) e.style.marginBottom = margin.left.toString();
+}
+
 Element hBoxRenderer(final field, Renderers renderers) {
   if (field is HBox) {
     var ret = new DivElement()..classes.add('jaguar-admin-hbox');
-    for (View child in field.children) {
-      ViewRenderer rend = renderers.getFor(child);
-      if (rend == null)
-        throw new Exception("Renderer for ${child.runtimeType} not found!");
-      ret.append(rend(child, renderers));
+    ret.classes.addAll(field.classes);
+    ret.style.boxSizing = 'border-box';
+    for (View child in field.children) ret.append(renderers.render(child));
+    if (field.width != null) {
+      if(field.width is FlexSize) {
+        ret.style.flex = field.width.toString();
+      } else
+        ret.style.width = field.width.toString();
     }
+    if (field.height != null) ret.style.height = field.height.toString();
+    if (field.vAlign != null)
+      ret.style.alignItems = vAlignToCssAlignItems(field.vAlign);
+    if (field.hAlign != null)
+      ret.style.justifyContent = hAlignToCssJustifyContent(field.hAlign);
+    if (field.pad != null) _padElement(ret, field.pad);
+    if (field.margin != null) _marginElement(ret, field.margin);
     return ret;
   }
   throw new Exception();
@@ -145,7 +257,7 @@ Element hBoxRenderer(final field, Renderers renderers) {
 Element buttonRenderer(final field, Renderers renderers) {
   if (field is Button) {
     var ret = new SpanElement()
-      ..classes.add('jaguar-admin-button')
+      ..classes.add('button')
       ..style.color = field.color;
     if (field.icon != null) ret.append(new SpanElement()); // TODO set icon
     if (field.text != null) ret.append(new SpanElement()..text = field.text);
@@ -159,22 +271,14 @@ Element buttonRenderer(final field, Renderers renderers) {
 
 Element tableRenderer(final field, Renderers renderers) {
   if (field is Table) {
-    // TODO resizable tables
-    ViewRenderer<TextField> textRend = renderers.get<TextField>();
-    if (textRend == null)
-      throw new Exception("Renderer for TextField not found!");
     var header = new Element.tag('thead')
       ..classes.add('jaguar-admin-table-head');
     for (int i = 0; i < field.numCols; i++) {
       ColumnSpec spec = field.spec[i];
       var th = new Element.th()
         ..classes.add('jaguar-admin-table-head-item')
-        ..append(textRend(TextField(spec.label), renderers));
-      if (spec.width is FixedSize) {
-        th.style.width = spec.width.size.toString() + 'px';
-      } else if (spec.width is FlexSize) {
-        th.style.width = spec.width.size.toString() + '%';
-      }
+        ..append(renderers.render(TextField(spec.label)));
+      if (spec.width != null) th.style.width = spec.width.toString();
       header.append(th);
     }
     var body = new Element.tag('tbody')..classes.add('jaguar-admin-table-body');
@@ -186,11 +290,10 @@ Element tableRenderer(final field, Renderers renderers) {
         ColumnSpec spec = field.spec[c];
         View v = row.cells[spec.name];
         if (v != null) {
-          ViewRenderer ren = renderers.getFor(v);
-          el.append(new TableCellElement()..append(ren(v, renderers)));
+          el.append(new TableCellElement()..append(renderers.render(v)));
         } else {
-          el.append(new TableCellElement()
-            ..append(textRend(TextField(""), renderers)));
+          el.append(
+              new TableCellElement()..append(renderers.render(TextField(""))));
         }
       }
       body.append(el);
@@ -220,7 +323,15 @@ class Renderers {
 
   ViewRenderer<T> get<T>() => _renderers[T];
 
-  ViewRenderer getFor(View view) => _renderers[view.runtimeType];
+  ViewRenderer getFor(view) => _renderers[view.runtimeType];
+
+  Element render(view) {
+    if (view == null) throw new Exception("View cannot be null!");
+    if (view is ViewMaker) return render(view.makeView());
+    ViewRenderer ren = getFor(view);
+    if (ren != null) return ren(view, this);
+    throw new Exception("A renderer for ${view.runtimeType} not found!");
+  }
 
   void merge(Renderers other) {
     _renderers.addAll(other._renderers);

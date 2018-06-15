@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:html';
 import 'package:admin_client/admin_client.dart';
+import 'package:admin_client/controls/fa_solid.dart';
 
 class Player {
   String name;
@@ -10,10 +11,9 @@ class Player {
   String toString() => 'Player(name: ${name}, age: ${age})';
 }
 
-class PlayerRes
-    implements ReadListView<Player>, ReadView<Player>, UpdateView<Player> {
+class PlayerRes implements AllPages<Player> {
   @override
-  Future<View> renderReadList(
+  Future<View> composeReadList(
       List<Player> model, Resource<Player> r, Context ctx) {
     return simpleListPage({
       'Name': (Player p) => TextField(p.name),
@@ -22,7 +22,7 @@ class PlayerRes
   }
 
   @override
-  View renderRead(Player model, Resource<Player> r, Context ctx) {
+  View composeRead(Player model, Resource<Player> r, Context ctx) {
     return Box(children: [
       LabeledTextField(model.name, 'Name'),
       LabeledIntField(model.age, 'Age')
@@ -30,18 +30,94 @@ class PlayerRes
   }
 
   @override
-  View renderUpdate(Player model, Resource<Player> res, Context ctx) {
-    var ret = Box();
+  View composeUpdate(Player model, Resource<Player> res, Context ctx) {
+    var ret = Box(classes: ['admin-content-body']);
     ret.addChildren([
       LabeledTextEdit(label: 'Name', initial: model.name, key: 'Name'),
-      HBox(children: [
-        Button(text: 'Submit', onClick: () async {
-          var nameV = ret.getByKey<LabeledTextEdit>('Name');
-          await res.fetcher.update(res.name, Player(name: nameV.readValue()));
-        }),
-      ]),
+      LabeledIntEdit(label: 'Age', initial: model.age, key: 'Age'),
     ]);
-    return ret;
+    return new Box(children: [
+      HBox(
+          children: [
+            HBox(
+                children: [
+                  TextField(FASolid.plus, fontFamily: 'fa5-free'),
+                  TextField(res.label, classes: ['jaguar-admin-title'])
+                ],
+                width: FlexSize(1.0),
+                height: PercentageSize(100),
+                vAlign: VAlign.middle),
+            HBox(children: [
+              Button(
+                  text: '${FASolid.recycle} Reset',
+                  color: Button.blue,
+                  fontSize: 12,
+                  onClick: () async {
+                    var nameV = ret.getByKey<LabeledTextEdit>('Name');
+                    var ageV = ret.getByKey<LabeledIntEdit>('Age');
+                    await res.fetcher.update(res.name,
+                        Player(name: nameV.readValue(), age: ageV.readValue()));
+                  }),
+              Button(
+                  text: '${FASolid.check} Submit',
+                  color: Button.green,
+                  fontSize: 12,
+                  onClick: () async {
+                    var nameV = ret.getByKey<LabeledTextEdit>('Name');
+                    var ageV = ret.getByKey<LabeledIntEdit>('Age');
+                    await res.fetcher.update(res.name,
+                        Player(name: nameV.readValue(), age: ageV.readValue()));
+                  }),
+            ], height: PercentageSize(100), vAlign: VAlign.middle),
+          ],
+          width: PercentageSize(100),
+          height: FixedSize(52),
+          vAlign: VAlign.middle,
+          classes: ['jaguar-admin-titlebar']),
+      ret,
+    ]);
+  }
+
+  @override
+  FutureOr<View> composeCreate(Resource<Player> res, Context ctx) {
+    var ret = Box(classes: ['admin-content-body']);
+    ret.addChildren([
+      LabeledTextEdit(label: 'Name', key: 'Name'),
+      LabeledIntEdit(label: 'Age', key: 'Age'),
+    ]);
+    return new Box(children: [
+      HBox(
+          children: [
+            HBox(
+                children: [
+                  TextField(FASolid.plus, fontFamily: 'fa5-free'),
+                  TextField(res.label, classes: ['jaguar-admin-title'])
+                ],
+                width: FlexSize(1.0),
+                height: PercentageSize(100),
+                vAlign: VAlign.middle),
+            HBox(
+                children: [
+                  Button(
+                      text: '${FASolid.check} Submit',
+                      color: Button.green,
+                      fontSize: 12,
+                      onClick: () async {
+                        var nameV = ret.getByKey<LabeledTextEdit>('Name');
+                        var ageV = ret.getByKey<LabeledIntEdit>('Age');
+                        await res.fetcher.create(res.name,
+                            Player(name: nameV.readValue(), age: ageV.readValue()));
+                      }),
+                ],
+                height: PercentageSize(100),
+                vAlign: VAlign.middle),
+          ],
+          width: PercentageSize(100),
+          height: FixedSize(52),
+          vAlign: VAlign.middle,
+          classes: ['jaguar-admin-titlebar']),
+      ret,
+    ]);
   }
 }
 
@@ -69,7 +145,10 @@ void main() {
   var playerRes = PlayerRes();
   var admin = Admin([
     new Resource<Player>(
-        read: playerRes, readList: playerRes, update: playerRes),
+        read: playerRes,
+        readList: playerRes,
+        update: playerRes,
+        create: playerRes),
   ], fetcher: new DummyPlayerFetcher());
 
   Element b = build(admin);

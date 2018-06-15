@@ -30,8 +30,8 @@ class ColumnSpec<T> {
       this.isResizable: true})
       : name = name ?? label;
 
-  bool operator==(other) {
-    if(other is ColumnSpec) return name == other.name;
+  bool operator ==(other) {
+    if (other is ColumnSpec) return name == other.name;
     return false;
   }
 
@@ -52,18 +52,4 @@ class Table implements View {
   int get numCols => spec.length;
 
   int get numRows => rows.length;
-}
-
-abstract class Size {
-  num get size;
-}
-
-class FixedSize implements Size {
-  final num size;
-  FixedSize(this.size);
-}
-
-class FlexSize implements Size {
-  final num size;
-  FlexSize(this.size);
 }

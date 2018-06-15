@@ -4,21 +4,26 @@ import 'package:admin_client/fetcher/fetcher.dart';
 
 export 'list_page_maker.dart';
 
-abstract class CreateView<R> {
-  FutureOr<View> renderCreate(Resource<R> res, Context ctx);
+abstract class CreatePage<R> {
+  FutureOr<View> composeCreate(Resource<R> res, Context ctx);
 }
 
-abstract class UpdateView<R> {
-  FutureOr<View> renderUpdate(R model, Resource<R> res, Context ctx);
+abstract class UpdatePage<R> {
+  FutureOr<View> composeUpdate(R model, Resource<R> res, Context ctx);
 }
 
-abstract class ReadView<R> {
-  FutureOr<View> renderRead(R model, Resource<R> res, Context ctx);
+abstract class ReadPage<R> {
+  FutureOr<View> composeRead(R model, Resource<R> res, Context ctx);
 }
 
-abstract class ReadListView<R> {
-  FutureOr<View> renderReadList(List<R> model, Resource<R> res, Context ctx);
+abstract class ReadListPage<R> {
+  FutureOr<View> composeReadList(List<R> model, Resource<R> res, Context ctx);
 }
+
+abstract class AllPages<R>
+    implements CreatePage<R>, UpdatePage<R>, ReadPage<R>, ReadListPage<R> {}
+
+abstract class ReadOnlyPages<R> implements ReadPage<R>, ReadListPage<R> {}
 
 class Route {
   final String path;
@@ -44,10 +49,10 @@ class Route {
 }
 
 class Resource<R> {
-  final CreateView<R> create;
-  final UpdateView<R> update;
-  final ReadView<R> read;
-  final ReadListView<R> readList;
+  final CreatePage<R> create;
+  final UpdatePage<R> update;
+  final ReadPage<R> read;
+  final ReadListPage<R> readList;
   final String name;
   final String label;
   GenericFetcher fetcher;
@@ -69,24 +74,25 @@ class Resource<R> {
   void makeRoutes(Router router) {
     if (create != null) {
       router[createUrl] = (Route route, Context ctx) async {
-        return create.renderCreate(this, ctx);
+        return create.composeCreate(this, ctx);
       };
     }
     if (update != null) {
       router[updateUrl] = (Route route, Context ctx) async {
-        return update.renderUpdate(
+        return update.composeUpdate(
             await fetcher.read(name, route[2]), this, ctx);
       };
     }
     if (read != null) {
       router[readUrl] = (Route route, Context ctx) async {
-        return read.renderRead(await fetcher.read(name, route[1]), this, ctx);
+        return read.composeRead(await fetcher.read(name, route[1]), this, ctx);
       };
     }
     if (readList != null) {
       router[readListUrl] = (Route route, Context ctx) async {
         // TODO implement pagination
-        return readList.renderReadList(await fetcher.readList(name), this, ctx);
+        return readList.composeReadList(
+            await fetcher.readList(name), this, ctx);
       };
     }
   }

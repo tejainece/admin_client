@@ -1,5 +1,33 @@
+import 'package:collection/collection.dart';
+
+abstract class Size {
+  num get size;
+}
+
+class FixedSize implements Size {
+  final num size;
+  FixedSize(this.size);
+  String toString() => '${size.toString()}px';
+}
+
+class FlexSize implements Size {
+  final double size;
+  FlexSize(this.size);
+  String toString() => '${size.toString()}';
+}
+
+class PercentageSize implements Size {
+  final num size;
+  PercentageSize(this.size);
+  String toString() => '${size.toString()}%';
+}
+
 abstract class View {
   String get key;
+}
+
+abstract class ViewMaker {
+  View makeView();
 }
 
 enum VAlign { top, middle, bottom }
@@ -17,8 +45,17 @@ class TextField implements View {
   String key;
   String text;
   bool bold;
+  String fontFamily;
+  String color;
+  final IfSet<String> classes;
 
-  TextField(this.text, {this.bold: false, this.key});
+  TextField(this.text,
+      {this.bold: false,
+      this.key,
+      this.fontFamily,
+      this.color,
+      Iterable<String> classes})
+      : classes = IfSet<String>.from(classes ?? []);
 }
 
 class LabeledTextField implements View {
@@ -89,6 +126,8 @@ class Button implements View {
   static const String blue = '#2687c1';
 
   static const String red = 'rgb(208, 51, 51)';
+
+  static const String green = '#19ac19';
 }
 
 abstract class Container implements View {
@@ -96,10 +135,57 @@ abstract class Container implements View {
   T deepGetByKey<T extends View>(Iterable<String> keys);
 }
 
+class EdgeInset {
+  Size top;
+  Size right;
+  Size bottom;
+  Size left;
+  EdgeInset({Size top, Size right, Size bottom, Size left, Size rest})
+      : top = top ?? rest,
+        right = right ?? rest,
+        bottom = bottom ?? rest,
+        left = left ?? rest;
+  EdgeInset.v(Size pad, {Size rest})
+      : top = pad,
+        bottom = pad,
+        right = rest,
+        left = rest;
+  EdgeInset.h(Size pad, {Size rest})
+      : right = pad,
+        left = pad,
+        top = rest,
+        bottom = rest;
+  EdgeInset.all(Size pad)
+      : top = pad,
+        right = pad,
+        bottom = pad,
+        left = pad;
+}
+
 class Box implements Container {
   final String key;
   final List<View> children;
-  Box({List<View> children, this.key}) : children = children ?? <View>[];
+  final IfSet<String> classes; // TODO: Make it, bi-directional
+  final Size width;
+  final Size height;
+  HAlign hAlign;
+  VAlign vAlign;
+  final EdgeInset pad;
+  final EdgeInset margin;
+  Box(
+      {View child,
+      List<View> children,
+      this.key,
+      Iterable<String> classes: const [],
+      this.width,
+      this.height,
+      this.hAlign,
+      this.vAlign,
+      this.pad,
+      this.margin})
+      : children =
+            children ?? (child != null ? <View>[child] : null) ?? <View>[],
+        classes = IfSet<String>.from(classes);
   void addChild(View v) => children.add(v);
   void addChildren(Iterable<View> v) => children.addAll(v);
   T getByKey<T extends View>(String key) =>
@@ -121,8 +207,27 @@ class Box implements Container {
 class HBox implements View {
   String key;
   final List<View> children;
-
-  HBox({List<View> children, this.key}) : children = children ?? <View>[];
+  final IfSet<String> classes;
+  final Size width;
+  final Size height;
+  HAlign hAlign;
+  VAlign vAlign;
+  final EdgeInset pad;
+  final EdgeInset margin;
+  HBox(
+      {View child,
+      List<View> children,
+      this.key,
+      Iterable<String> classes: const [],
+      this.width,
+      this.height,
+      this.hAlign,
+      this.vAlign: VAlign.middle,
+      this.pad,
+      this.margin})
+      : children =
+            children ?? (child != null ? <View>[child] : null) ?? <View>[],
+        classes = IfSet<String>.from(classes);
   void addChild(View v) => children.add(v);
   void addChildren(Iterable<View> v) => children.addAll(v);
   T getByKey<T extends View>(String key) =>
@@ -139,4 +244,69 @@ class HBox implements View {
     }
     return null;
   }
+}
+
+typedef bool Condition();
+
+class IfList<E> extends DelegatingList<E> implements List<E> {
+  IfList([int length]) : super(List<E>(length));
+
+  IfList.filled(int length, E fill, {bool growable: false})
+      : super(List<E>.filled(length, fill, growable: growable));
+
+  IfList.from(Iterable elements, {bool growable: true})
+      : super(List<E>.from(elements, growable: growable));
+
+  IfList.of(Iterable<E> elements, {bool growable: true})
+      : super(List<E>.of(elements, growable: growable));
+
+  IfList.generate(int length, E generator(int index), {bool growable: true})
+      : super(List<E>.generate(length, generator, growable: growable));
+
+  void addIf(/* bool | Condition */ condition, E element) {
+    if (condition is Condition) condition = condition();
+    if (condition is bool && condition) add(element);
+  }
+
+  void addAllIf(/* bool | Condition */ condition, Iterable<E> elements) {
+    if (condition is Condition) condition = condition();
+    if (condition is bool && condition) addAll(elements);
+  }
+}
+
+class IfMap<K, V> extends DelegatingMap<K, V> implements Map<K, V> {
+  IfMap() : super(<K, V>{});
+
+  IfMap.from(Map other) : super(Map<K, V>.from(other));
+
+  IfMap.of(Map<K, V> other) : super(Map<K, V>.of(other));
+
+  IfMap.fromIterable(Iterable iterable, {K key(element), V value(element)})
+      : super(Map<K, V>.fromIterable(iterable, key: key, value: value));
+
+  IfMap.fromIterables(Iterable<K> keys, Iterable<V> values)
+      : super(Map<K, V>.fromIterables(keys, values));
+
+  IfMap.fromEntries(Iterable<MapEntry<K, V>> entries)
+      : super(Map<K, V>.fromEntries(entries));
+
+  void add(K key, V value) => this[key] = value;
+
+  void addIf(/* bool | Condition */ condition, K key, V value) {
+    if (condition is Condition) condition = condition();
+    if (condition is bool && condition) this[key] = value;
+  }
+
+  void addAllIf(/* bool | Condition */ condition, Map<K, V> values) {
+    if (condition is Condition) condition = condition();
+    if (condition is bool && condition) addAll(values);
+  }
+}
+
+class IfSet<E> extends DelegatingSet<E> implements Set<E> {
+  IfSet() : super(new Set<E>());
+
+  IfSet.from(Iterable elements) : super(Set<E>.from(elements));
+
+  IfSet.of(Iterable<E> elements) : super(Set<E>.of(elements));
 }

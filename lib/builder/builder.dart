@@ -69,7 +69,7 @@ Element buildMenu(BuildContext info) {
 }
 
 Element buildContent(BuildContext info) {
-  final ret = new DivElement()..classes.add('admin-content-body');
+  final ret = new DivElement()..classes.add('admin-content');
 
   final builder = (Route route) async {
     ContentMaker maker = info.router[route.path];
@@ -101,7 +101,5 @@ Element buildContent(BuildContext info) {
 
   builder(Route(''));
 
-  return new DivElement()
-    ..classes.add('admin-content')
-    ..append(ret);
+  return ret;
 }
