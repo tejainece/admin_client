@@ -6,7 +6,7 @@ abstract class Size {
 
 class FixedSize implements Size {
   final num size;
-  FixedSize(this.size);
+  const FixedSize(this.size);
   String toString() => '${size.toString()}px';
 }
 
@@ -26,6 +26,12 @@ abstract class View {
   String get key;
 }
 
+abstract class ViewWithWidth implements View {
+  Size width;
+  Size minWidth;
+  Size maxWidth;
+}
+
 abstract class ViewMaker {
   View makeView();
 }
@@ -39,39 +45,78 @@ abstract class SortableView implements View {
 
 // TODO abstract class Control implements View {}
 
-abstract class Input implements View {}
-
-class TextField implements View {
+class TextField implements View, ViewWithWidth {
   String key;
   String text;
   bool bold;
   String fontFamily;
   String color;
   final IfSet<String> classes;
+  Size width;
+  Size minWidth;
+  Size maxWidth;
 
   TextField(this.text,
       {this.bold: false,
       this.key,
       this.fontFamily,
       this.color,
-      Iterable<String> classes})
-      : classes = IfSet<String>.from(classes ?? []);
+      String class_,
+      Iterable<String> classes,
+      this.width,
+      this.minWidth,
+      this.maxWidth})
+      : classes = IfSet<String>.oneOf(classes, class_);
 }
 
-class LabeledTextField implements View {
-  String key;
-  String text;
-  String label;
-
-  LabeledTextField(this.text, this.label, {this.key});
+abstract class LabeledView implements View {
+  View get labelField;
 }
 
-class VLabeledTextField implements View {
-  String key;
-  final String text;
-  final String label;
+abstract class VLabeledView implements LabeledView {}
 
-  VLabeledTextField(this.text, this.label, {this.key});
+abstract class HLabeledView implements LabeledView {}
+
+class LabeledTextField implements HLabeledView {
+  String key;
+  TextField labelField;
+  TextField textField;
+  Size height;
+  VAlign vAlign;
+
+  LabeledTextField(
+      {String label,
+      TextField labelField,
+      TextField textField,
+      String text,
+      this.height,
+      this.vAlign,
+      this.key})
+      : textField = textField ?? TextField(text),
+        labelField = labelField ?? TextField(label) {
+    this.labelField.classes.add('label');
+  }
+}
+
+class VLabeledTextField implements VLabeledView {
+  String key;
+  TextField labelField;
+  TextField textField;
+  Size width;
+  HAlign hAlign;
+
+  VLabeledTextField(
+      {String label,
+      TextField labelField,
+      TextField textField,
+      String text,
+      this.width,
+      this.hAlign,
+      this.key})
+      : textField = textField ?? TextField(text),
+        labelField = labelField ?? TextField(label) {
+    this.labelField.classes.add('label');
+  }
 }
 
 class IntField implements View {
@@ -82,20 +127,46 @@ class IntField implements View {
   IntField(this.text, {this.bold, this.key});
 }
 
-class LabeledIntField implements View {
+class LabeledIntField implements HLabeledView {
   String key;
-  final int text;
-  final String label;
+  TextField labelField;
+  IntField intField;
+  Size height;
+  VAlign vAlign;
 
-  LabeledIntField(this.text, this.label, {this.key});
+  LabeledIntField(
+      {String label,
+      TextField labelField,
+      IntField intField,
+      int text,
+      this.height,
+      this.vAlign,
+      this.key})
+      : intField = intField ?? IntField(text),
+        labelField = labelField ?? TextField(label) {
+    this.labelField.classes.add('label');
+  }
 }
 
-class VLabeledIntField implements View {
+class VLabeledIntField implements VLabeledView {
   String key;
-  final int text;
-  final String label;
+  TextField labelField;
+  IntField intField;
+  Size width;
+  HAlign hAlign;
 
-  VLabeledIntField(this.text, this.label, {this.key});
+  VLabeledIntField(
+      {String label,
+      TextField labelField,
+      IntField intField,
+      int text,
+      this.width,
+      this.hAlign,
+      this.key})
+      : intField = intField ?? IntField(text),
+        labelField = labelField ?? TextField(label) {
+    this.labelField.classes.add('label');
+  }
 }
 
 typedef dynamic Callback();
@@ -206,7 +277,7 @@ class Box implements Container {
 
 class HBox implements View {
   String key;
-  final List<View> children;
+  final IfList<View> children;
   final IfSet<String> classes;
   final Size width;
   final Size height;
@@ -216,7 +287,7 @@ class HBox implements View {
   final EdgeInset margin;
   HBox(
       {View child,
-      List<View> children,
+      Iterable<View> children,
       this.key,
       Iterable<String> classes: const [],
       this.width,
@@ -225,8 +296,8 @@ class HBox implements View {
       this.vAlign: VAlign.middle,
       this.pad,
       this.margin})
-      : children =
-            children ?? (child != null ? <View>[child] : null) ?? <View>[],
+      : children = IfList<View>.from(
+            children ?? (child != null ? <View>[child] : null) ?? <View>[]),
         classes = IfSet<String>.from(classes);
   void addChild(View v) => children.add(v);
   void addChildren(Iterable<View> v) => children.addAll(v);
@@ -254,8 +325,11 @@ class IfList<E> extends DelegatingList<E> implements List<E> {
   IfList.filled(int length, E fill, {bool growable: false})
       : super(List<E>.filled(length, fill, growable: growable));
 
-  IfList.from(Iterable elements, {bool growable: true})
+  IfList.from(Iterable<E> elements, {bool growable: true})
       : super(List<E>.from(elements, growable: growable));
+
+  IfList.oneOf(Iterable<E> elements, [E element])
+      : super(elements?.toList() ?? <E>[element] ?? <E>[]);
 
   IfList.of(Iterable<E> elements, {bool growable: true})
       : super(List<E>.of(elements, growable: growable));
@@ -307,6 +381,9 @@ class IfSet<E> extends DelegatingSet<E> implements Set<E> {
   IfSet() : super(new Set<E>());
 
   IfSet.from(Iterable elements) : super(Set<E>.from(elements));
+
+  IfSet.oneOf(Iterable<E> elements, [E element])
+      : super(Set<E>.from(elements ?? <E>[element] ?? <E>[]));
 
   IfSet.of(Iterable<E> elements) : super(Set<E>.of(elements));
 }

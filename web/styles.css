@@ -136,6 +136,10 @@ html, body {
     border-bottom: 1px solid #cecece;
 }
 
+.jaguar-admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
 .button {
     cursor: pointer;
     filter: none;
@@ -150,6 +154,10 @@ html, body {
 
 .button:active {
     filter: none;
+}
+
+.textfield {
+    text-overflow: ellipsis;
 }
 
 .textinput {
@@ -179,11 +187,11 @@ html, body {
 }
 
 .jaguar-admin-titlebar {
-    padding: 0px 5px;
+    padding: 0px 50px;
     color: #8f8f8f;
 }
 
 .jaguar-admin-titlebar .jaguar-admin-title {
     font-size: 24px;
-    margin: 0px 5px;
+    margin: 0px 15px;
 }

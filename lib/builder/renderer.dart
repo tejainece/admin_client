@@ -15,7 +15,16 @@ final Renderers defaultRenderers = new Renderers()
   ..register<TextEdit>(textEditRenderer)
   ..register<LabeledTextEdit>(labeledTextEditRenderer)
   ..register<IntEdit>(intEditRenderer)
-  ..register<LabeledIntEdit>(labeledIntEditRenderer);
+  ..register<LabeledIntEdit>(labeledIntEditRenderer)
+  ..register<Form>(formRenderer);
+
+void renderWidth(final Element el, final View view) {
+  if (view is ViewWithWidth) {
+    if (view.width != null) el.style.width = view.width.toString();
+    if (view.minWidth != null) el.style.minWidth = view.minWidth.toString();
+    if (view.maxWidth != null) el.style.maxWidth = view.maxWidth.toString();
+  }
+}
 
 Element textEditRenderer(final field, Renderers renderers) {
   if (field is TextEdit) {
@@ -25,7 +34,10 @@ Element textEditRenderer(final field, Renderers renderers) {
     if (field.placeholder != null) ret.placeholder = field.placeholder;
     if (field.bold) ret.style.fontWeight = 'bold';
     field.readValue = () => ret.value;
-    field.setValue = (v) => ret.value = v ?? '';
+    field.setValue = (v) {
+      ret.value = v ?? '';
+    };
+    renderWidth(ret, field);
     return ret;
   }
   throw new Exception();
@@ -38,6 +50,7 @@ Element labeledTextEditRenderer(final field, Renderers renderers) {
       field.editField,
     ]))
       ..classes.addAll(['labeled', 'labeled-textinput']);
+    renderWidth(ret, field);
     return ret;
   }
   throw new Exception();
@@ -51,7 +64,9 @@ Element intEditRenderer(final field, Renderers renderers) {
     if (field.placeholder != null) ret.placeholder = field.placeholder;
     if (field.bold) ret.style.fontWeight = 'bold';
     field.readValue = () => int.tryParse(ret.value);
-    field.setValue = (int v) => ret.value = v?.toString() ?? '';
+    void setValue(int v) => ret.value = v?.toString() ?? '';
+    field.setValue = setValue;
+    renderWidth(ret, field);
     return ret;
   }
   throw new Exception();
@@ -64,6 +79,7 @@ Element labeledIntEditRenderer(final field, Renderers renderers) {
       field.editField,
     ]))
       ..classes.addAll(['labeled', 'labeled-textinput']);
+    renderWidth(ret, field);
     return ret;
   }
   throw new Exception();
@@ -72,12 +88,13 @@ Element labeledIntEditRenderer(final field, Renderers renderers) {
 Element textFieldRenderer(final field, _) {
   if (field is TextField) {
     var ret = new DivElement()
-      ..classes.add('jaguar-admin-text')
+      ..classes.add('textfield')
       ..text = field.text;
     ret.classes.addAll(field.classes);
     if (field.bold) ret.style.fontWeight = 'bold';
     if (field.fontFamily != null) ret.style.fontFamily = field.fontFamily;
     if (field.color != null) ret.style.color = field.color;
+    renderWidth(ret, field);
     return ret;
   }
   throw new Exception();
@@ -85,53 +102,63 @@ Element textFieldRenderer(final field, _) {
 
 Element intFieldRenderer(final field, _) {
   if (field is IntField) {
-    return new DivElement()
-      ..classes.add('jaguar-admin-int')
+    var ret = new DivElement()
+      ..classes.addAll(['textfield', 'textfield-int'])
       ..text = field.text.toString();
+    renderWidth(ret, field);
+    return ret;
   }
   throw new Exception();
 }
 
 Element labeledTextFieldRenderer(final field, Renderers renderers) {
   if (field is LabeledTextField) {
-    var ret = new DivElement()
-      ..classes.add('jaguar-admin-labeled-text')
-      ..append(renderers.render(HBox(children: [
-        TextField(field.label, bold: true),
-        TextField(field.text)
-      ])));
+    var ret = renderers.render(HBox(children: [
+      field.labelField,
+      field.textField,
+    ]))
+      ..classes.addAll(['labeled', 'labeled-textfield']);
+    renderWidth(ret, field);
     return ret;
   }
   throw new Exception();
 }
 
 Element vLabeledTextFieldRenderer(final field, Renderers renderers) {
-  if (field is VLabeledTextField) {
-    return new DivElement()
-      ..classes.add('jaguar-admin-text')
-      ..text = field.text;
+  if (field is LabeledTextField) {
+    var ret = renderers.render(Box(children: [
+      field.labelField,
+      field.textField,
+    ]))
+      ..classes.addAll(['vlabeled', 'vlabeled-textfield']);
+    renderWidth(ret, field);
+    return ret;
   }
   throw new Exception();
 }
 
 Element labeledIntFieldRenderer(final field, Renderers renderers) {
   if (field is LabeledIntField) {
-    var ret = new DivElement()
-      ..classes.add('jaguar-admin-labeled-text')
-      ..append(renderers.render(HBox(children: [
-        TextField(field.label, bold: true),
-        IntField(field.text)
-      ])));
+    var ret = renderers.render(HBox(children: [
+      field.labelField,
+      field.intField,
+    ]))
+      ..classes.addAll(['labeled', 'labeled-textfield']);
+    renderWidth(ret, field);
     return ret;
   }
   throw new Exception();
 }
 
 Element vLabeledIntFieldRenderer(final field, Renderers renderers) {
-  if (field is VLabeledIntField) {
-    return new DivElement()
-      ..classes.add('jaguar-admin-int')
-      ..text = field.text.toString();
+  if (field is LabeledTextField) {
+    var ret = renderers.render(Box(children: [
+      field.labelField,
+      field.textField,
+    ]))
+      ..classes.addAll(['vlabeled', 'vlabeled-textfield']);
+    renderWidth(ret, field);
+    return ret;
   }
   throw new Exception();
 }
@@ -172,10 +199,10 @@ Element boxRenderer(final field, Renderers renderers) {
     for (View child in field.children) ret.append(renderers.render(child));
     if (field.width != null) ret.style.width = field.width.toString();
     if (field.height != null) {
-      if(field.height is FlexSize) {
+      if (field.height is FlexSize) {
         ret.style.flex = field.height.toString();
       } else
-      ret.style.height = field.height.toString();
+        ret.style.height = field.height.toString();
     }
     if (field.vAlign != null)
       ret.style.justifyContent = vAlignToCssJustifyContent(field.vAlign);
@@ -237,7 +264,7 @@ Element hBoxRenderer(final field, Renderers renderers) {
     ret.style.boxSizing = 'border-box';
     for (View child in field.children) ret.append(renderers.render(child));
     if (field.width != null) {
-      if(field.width is FlexSize) {
+      if (field.width is FlexSize) {
         ret.style.flex = field.width.toString();
       } else
         ret.style.width = field.width.toString();
@@ -264,6 +291,7 @@ Element buttonRenderer(final field, Renderers renderers) {
     if (field.fontSize != null) ret.style.fontSize = '${field.fontSize}px';
     if (field.tip != null) ret.title = field.tip;
     if (field.onClick != null) ret.onClick.listen((_) => field.onClick());
+    renderWidth(ret, field);
     return ret;
   }
   throw new Exception();
@@ -308,6 +336,18 @@ Element tableRenderer(final field, Renderers renderers) {
           "cellspacing": "0",
           "cellpadding": "0",
         }));
+  }
+  throw new Exception();
+}
+
+Element formRenderer(final field, Renderers renderers) {
+  if (field is Form) {
+    var ret = renderers.render(Box(
+      children: field.children,
+    ))
+      ..classes.add('form');
+    renderWidth(ret, field);
+    return ret;
   }
   throw new Exception();
 }
